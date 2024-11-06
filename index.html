@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <title>Orden de Compra Nacional</title>
+
+    <!-- A template for showing data in a Custom Widget in Grist. -->
+    <!-- Uses Vue.js, moment, and the Grist Plugin API -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.5.3/vue.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.27.0/moment.min.js"></script>
+    <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+
+    <script src="grist_update.js"></script>
+    <script src="exampleData.js"></script>
+
+    <link rel="stylesheet" href="ocNacional.css">
+  </head>
+  <body>
+    <div id="app">
+      <!-- Mostrar status mientras se espera por los datos -->
+      <div class="status" v-if="status">
+        <template v-if="status === 'waiting'">
+          <p>Waiting for data...</p>
+          <ul>
+            <li v-bind:class="[tableConnected ? 'done' : '']">Se necesita <b> leer la tabla</b> access.</li>
+            <li v-bind:class="[haveRows ? 'done' : '']">Se necesita al menos un elemento de datos.</li>
+            <li v-bind:class="[rowConnected ? 'done' : '']">Se necesita que <b>Select By</b> esté configurado.</li>
+          </ul>
+          <p>Ejemplos:</p>
+          <ul>
+            <li><a class="button" href="index.html?demo=1">Ejemplo de Orden de Compra</a></li>
+            <li><a class="button" href="index.html?labels=1">Ejemplo con etiquetas</a></li>
+          </ul>
+        </template>
+        <template v-else>
+          {{ status }}
+        </template>
+      </div>
+
+      <!-- Mostrar datos solo cuando estén disponibles -->
+      <template v-if="gristdata && status !== 'waiting'">
+        <header>
+          <table class="header-table">
+            <tr>
+              <td class="logo"><img src="logo.png" alt="ELCO SA DE CV" style="height: 50px;"></td>
+              <td class="title">Orden de Compra Nacional</td>
+              <td class="details">
+                <div>FOR-ADQ-02</div>
+                <div>VERSION: 0</div>
+              </td>
+            </tr>
+          </table>
+        </header>
+
+        <div class="container">
+          <div class="info-section">
+            <h3>Facturar a:</h3>
+            <table>
+              <tr><td>RFC:</td><td>{{ gristdata.Referencia.Empresa_Base.RFC }}</td></tr>
+              <tr><td>Razón Social:</td><td>{{ gristdata.Referencia.Empresa_Base.Nombre }}</td></tr>
+              <tr><td>Domicilio:</td><td>{{ gristdata.Referencia.Empresa_Base.Direccion }}</td></tr>
+              <tr><td>Correo:</td><td>{{ gristdata.Referencia.Empresa_Base.Email }}</td></tr>
+              <tr><td>Uso de CFDI:</td><td>{{ gristdata.Referencia.Uso_CFDI }}</td></tr>
+              <tr><td>Forma de Pago:</td><td>{{ gristdata.Referencia.Forma_De_Pago }}</td></tr>
+              <tr><td>Método de Pago:</td><td>{{ gristdata.Referencia.Metodo_De_Pago }}</td></tr>
+        <!--      <tr><td>Dígitos Cuenta:</td><td>{{ gristdata.Referencia.Proveedor.Cuenta_Clabe }}</td></tr>  -->
+              <tr><td>Teléfono:</td><td>{{ gristdata.Referencia.Empresa_Base.Telefono }}</td></tr>
+            </table>
+          </div>
+
+          <div class="info-section">
+            <h3>Orden de Compra</h3>
+            <table>
+              <tr><td>Folio:</td><td>{{ gristdata.Referencia.Folio }}</td></tr>
+			  <tr><td>Fecha:</td><td>{{ gristdata.Referencia.Fecha | asDate }}</td></tr>
+              <tr><td>Cotización:</td><td>{{ gristdata.Referencia.Cotizacion }}</td></tr>
+              <tr><td>Proveedor:</td><td>{{ gristdata.Referencia.Proveedor.Razon_Social }}</td></tr>
+              <tr><td>Contacto:</td><td>{{ gristdata.Referencia.Contacto.Nombre_Contacto }}</td></tr>
+              <tr><td>Teléfono:</td><td>{{ gristdata.Referencia.Contacto.Telefono }}</td></tr>
+              <tr><td>Correo:</td><td>{{ gristdata.Referencia.Contacto.Correo }}</td></tr>
+              <tr><td>Banco:</td><td>{{ gristdata.Referencia.Proveedor.Banco }}</td></tr>
+              <tr><td>CTA O Clabe:</td><td>{{ gristdata.Referencia.Proveedor.Cuenta_Clabe }}</td></tr>
+              <tr><td>Titular:</td><td>{{ gristdata.Referencia.Proveedor.Empresa }}</td></tr>
+            </table>
+          </div>
+
+          <div class="info-section">
+            <h3>Enviar a:</h3>
+            <table>
+              <tr><td>Domicilio:</td><td>{{ gristdata.Referencia.Direccion_De_Entrega.Domicilio }}</td></tr>
+              <tr><td>Contacto:</td><td>{{ gristdata.Referencia.Direccion_De_Entrega.Contacto }}</td></tr>
+              <tr><td>Teléfono:</td><td>{{ gristdata.Referencia.Direccion_De_Entrega.Telefono }}</td></tr>
+            </table>
+          </div>
+
+          <div class="info-section">
+            <h3>Notas/Proyecto</h3>
+            <table>
+              <tr><td>Notas/Proyecto:</td><td>{{ gristdata.Nota }}</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Part</th>
+              <th>Modelo</th>
+              <th>Descripción</th>
+              <th>Cant</th>
+              <th>UM</th>
+              <th>P. Unitario</th>
+              <th>P. Subtotal</th>
+              <th>Descuento</th>
+              <th>P. Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="item in gristdata.Referencia.Items">
+              <td>{{ item.Partida }}</td>
+              <td>{{ item.Modelo }}</td>
+              <td>{{ item.Descripcion }}</td>
+              <td>{{ item.Cantidad }}</td>
+              <td>{{ item.Unidad_de_Medida }}</td>
+              <td>{{ item.Precio }}</td>
+              <td>{{ item.Subtotal }}</td>
+              <td>{{ item.Descuento_por_Item }}</td>
+              <td>{{ item.Total }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <table class="totales">
+          <tr>
+            <th>Subtotal:</th>
+            <td>{{ gristdata.PreciosTotales.Subtotal }}</td>
+          </tr>
+          <tr>
+            <th>Descuento:</th>
+            <td>{{ gristdata.PreciosTotales.DescuentoTotal }}</td>
+          </tr>
+		  <tr>
+            <th>Total Antes de Impuestos:</th>
+            <td>{{ gristdata.PreciosTotales.TotalAntesDeImpuestos }}</td>
+          </tr>
+          <tr>
+            <th>IVA:</th>
+            <td>{{ gristdata.PreciosTotales.IVA }}</td>
+          </tr>
+          <tr>
+            <th>Total:</th>
+            <td><strong>{{ gristdata.PreciosTotales.Total }}</strong></td>
+          </tr>
+        </table>
+
+        <div class="footer-container">
+          <div class="firma">
+            <!-- Espacio para firma -->
+            <label>Elaborado por: {{ gristdata.Referencia.Elaborado_Por }} </label>
+            <div style="border-bottom: 0px solid black; width: 100%; margin-top: -10px;"></div> <!-- Línea de firma -->
+          </div>
+          <div class="firma">
+            <!-- Espacio para firma -->
+            <label>Autorizado por: {{ gristdata.Referencia.Autorizada }}</label>
+            <div style="border-bottom: 0px solid black; width: 100%; margin-top: -10px;"></div> <!-- Línea de firma -->
+          </div>
+          <div class="empty-space"></div> <!-- Espacio vacío -->
+        </div>
+      </template>
+    </div>
+  </body>
+</html>
